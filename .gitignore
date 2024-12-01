@@ -5,19 +5,16 @@ __pycache__/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-notebooks/.ipynb_checkpoints
 
 # Ignore everything in data folder except specific subdirectories
-datasets/
+datasets/*
 !datasets/download_flickr30k.sh
 !datasets/readme.txt
 
-gallery/
+gallery/*
 !gallery/readme.txt
 # !data/train/.gitkeep
 # !data/val/.gitkeep
-
-docs/
 
 # Logs
 logs/
