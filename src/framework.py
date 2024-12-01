@@ -19,8 +19,8 @@ from src.models import ImageEncoder, TextEncoder
 class Framework(L.LightningModule):
     def __init__(
         self,
-        lang_model="microsoft/MiniLM-L12-H384-uncased",
-        dino_model='dinov2_vits14',
+        txt_model="microsoft/MiniLM-L12-H384-uncased",
+        img_model='dinov2_vits14',
         embed_size=64, # output dimension of the encoder
         lr=0.0001,
         warmup_epochs=0,
@@ -30,8 +30,8 @@ class Framework(L.LightningModule):
     ):
         super().__init__()
         
-        self.lang_model = lang_model
-        self.dino_model = dino_model
+        self.txt_model = txt_model
+        self.img_model = img_model
         self.embed_size = embed_size
         self.lr = lr
         self.warmup_epochs = warmup_epochs
@@ -41,8 +41,8 @@ class Framework(L.LightningModule):
         # Let's save all hyperparameters to hparams file (for reproducibility)
         self.save_hyperparameters()
         
-        self.img_encoder = ImageEncoder(self.embed_size, self.dino_model)
-        self.txt_encoder = TextEncoder(self.embed_size, self.lang_model)
+        self.img_encoder = ImageEncoder(self.embed_size, self.img_model)
+        self.txt_encoder = TextEncoder(self.embed_size, self.txt_model)
         self.loss_fn = ContrastiveLoss()
 
     

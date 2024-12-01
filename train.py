@@ -1,17 +1,18 @@
 import argparse
-import torch
+
 from lightning.pytorch import Trainer, seed_everything
 from lightning.pytorch.callbacks import RichProgressBar, ModelCheckpoint
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 from lightning.pytorch.loggers import TensorBoardLogger
 
+import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from transformers import AutoTokenizer
 
 
-from rich.traceback import install
-install() # this is for better traceback formatting
+# from rich.traceback import install
+# install() # this is for better traceback formatting
 
 from src.framework import Framework
 from dataset import Flickr30k, CollateFlickr
@@ -20,41 +21,40 @@ from dataset import Flickr30k, CollateFlickr
 seed = 42
 
 
-def train(batch_size, dev=False):
+def train(batch_size, lr=1e-4, dev=False):
     
     seed_everything(seed, workers=True)
     
-    # lang_model = "albert-base-v2"
-    # lang_model = "distilbert-base-uncased"
-    # lang_model = "bert-base-uncased"
-    lang_model = "sentence-transformers/all-MiniLM-L6-v2"
-    # lang_model = "sentence-transformers/all-MiniLM-L12-v2"
-    # lang_model = "huawei-noah/TinyBERT_General_4L_312D"
-    # lang_model = "sentence-transformers/all-mpnet-base-v2"
-    # lang_model = "microsoft/MiniLM-L12-H384-uncased"
+    # txt_model = "albert-base-v2"
+    # txt_model = "distilbert-base-uncased"
+    # txt_model = "bert-base-uncased"
+    txt_model = "sentence-transformers/all-MiniLM-L6-v2" # (~20M params)
+    # txt_model = "sentence-transformers/all-MiniLM-L12-v2"
+    # txt_model = "huawei-noah/TinyBERT_General_4L_312D"
+    # txt_model = "sentence-transformers/all-mpnet-base-v2"
+    # txt_model = "microsoft/MiniLM-L12-H384-uncased"
     
-    tokenizer = AutoTokenizer.from_pretrained(lang_model)
+    tokenizer = AutoTokenizer.from_pretrained(txt_model)
     
+    # let's define the model.
     model = Framework(
-        lang_model=lang_model,
-        lr=0.0001,
-        warmup_epochs=10,
+        txt_model=txt_model,
+        img_model="dinov2_vits14", # 'dinov2_vitb14' (60M params) or 'dinov2_vits14' (20M params)
+        learning_rate=0.0001,
         weight_decay=0.001,
+        warmup_epochs=10,
         milestones=[15, 30, 40],
-        lr_mult=0.3,
+        lr_mult=0.1,
     )
-    
     
     train_transform = transforms.Compose([
         # transforms.Resize((224, 224)),
-        transforms.RandomResizedCrop((224, 224), scale=(0.7, 1.0)),
-        transforms.RandomHorizontalFlip(),
-        transforms.RandomRotation(30),
         transforms.RandomPerspective(0.4, p=0.5),
+        transforms.RandomRotation(15),
+        transforms.RandomResizedCrop((224, 224), scale=(0.8, 1.0)),
+        transforms.RandomHorizontalFlip(0.5),
         transforms.RandomVerticalFlip(0.1),
-        transforms.ColorJitter(brightness=0.1, contrast=0.1, saturation=0.1, hue=0.),
-        # transforms.RandAugment(3, 15),
-        # transforms.TrivialAugmentWide(),
+        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.), # no hue because it distorts the colors
         transforms.ToTensor(),
         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])

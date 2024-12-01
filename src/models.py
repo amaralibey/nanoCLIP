@@ -14,9 +14,17 @@ from transformers import AutoModel
 
 
 class ImageEncoder(nn.Module):
-    def __init__(self, output_dim=64,  dino_model='dinov2_vits14'):
+    SUPPORTED_MODELS = [
+        'dinov2_vits14',
+        'dinov2_vitb14',
+        'dinov2_vitl14',
+        # 'dinov2_vitg14' # let's not use huge models for this simple task
+    ]
+    def __init__(self, output_dim=64,  img_model='dinov2_vits14'):
         super().__init__()
-        self.encoder = torch.hub.load('facebookresearch/dinov2', dino_model)
+        if img_model not in self.SUPPORTED_MODELS:
+            raise ValueError(f'Invalid model name. Choose between {self.SUPPORTED_MODELS}')
+        self.encoder = torch.hub.load('facebookresearch/dinov2', img_model)
         
         # freeze all parameters
         for param in self.encoder.parameters():

@@ -18,11 +18,16 @@ import random
 
 class Flickr30k(Dataset):
     def __init__(self, base_path, split='train', img_transform=None, txt_transform=None):
+        # make sur flickr30k_images folder exists in the base_path
         base_path = pathlib.Path(base_path)
+        img_dir = base_path / 'flickr30k_images'
+        if not img_dir.exists():
+            raise ValueError(f"Cannot find the flickr30k_images folder in {base_path}. Make sure to download the dataset.")
+        
+        self.img_dir = img_dir
         self.img_transform = img_transform
         self.txt_transform = txt_transform
         
-        self.img_dir = base_path / 'flickr30k_images'
         self.split = split
         
         # load all captions
