@@ -7,16 +7,19 @@
 # ----------------------------------------------------------------------------
 
 import torch
-import lightning as L
-import torch.nn as nn
 import torch.nn.functional as F
-from transformers import AutoModel
-import numpy as np
 import faiss
+import numpy as np
+import lightning as L
 from src.loss import ContrastiveLoss
 from src.models import ImageEncoder, TextEncoder
 
-class Framework(L.LightningModule):
+
+class NanoCLIP(L.LightningModule):
+    """ 
+    This class defines the pipeline for the nanoCLIP model.
+    
+    """
     def __init__(
         self,
         txt_model="microsoft/MiniLM-L12-H384-uncased",
@@ -46,18 +49,6 @@ class Framework(L.LightningModule):
         self.loss_fn = ContrastiveLoss()
 
     
-    def forward(self, image, captions, masks):
-        """ 
-        Define the forward pass of the pipeline.
-        """
-        # compute image embeddings
-        image_embedding = self.img_encoder(image) # (batch_size, out_dim)
-        image_embedding = F.normalize(image_embedding, p=2, dim=-1) # normalize embeddings
-        # compute text embeddings
-        text_embedding = self.txt_encoder(captions, masks) # (batch_size, nb_captions, out_dim)
-        text_embedding = F.normalize(text_embedding, p=2, dim=-1) # normalize embeddings
-        return image_embedding, text_embedding
-    
     def configure_optimizers(self):
         """
         Define the optimizer and the learning rate scheduler.
@@ -69,10 +60,8 @@ class Framework(L.LightningModule):
         optimizer = torch.optim.AdamW(optimizer_params)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
             optimizer, milestones=self.milestones, gamma=self.lr_mult
-        )
-        
+        )    
         return [optimizer], [scheduler]
-    
     
     def optimizer_step(self, epoch, batch_idx, optimizer, optimizer_closure):
         """
@@ -87,6 +76,20 @@ class Framework(L.LightningModule):
         optimizer.step(closure=optimizer_closure)
         self.log('_LR', optimizer.param_groups[-1]['lr'], prog_bar=False, logger=True)
     
+    def forward(self, image, captions, masks):
+        """ 
+        Define the forward pass of the pipeline.
+        """
+        # compute image embeddings
+        image_embedding = self.img_encoder(image) # (batch_size, out_dim)
+        image_embedding = F.normalize(image_embedding, p=2, dim=-1) # normalize embeddings
+        
+        # compute text embeddings
+        text_embedding = self.txt_encoder(captions, masks) # (batch_size, nb_captions, out_dim)
+        text_embedding = F.normalize(text_embedding, p=2, dim=-1) # normalize embeddings
+        
+        return image_embedding, text_embedding
+    
     def training_step(self, batch, batch_idx):
         """ 
         Define a single training step (one batch pass).
@@ -98,17 +101,17 @@ class Framework(L.LightningModule):
         images, captions, masks = batch
         
         if len(captions.shape) == 3: # flatten captions to (batch_size*nb_caps, cap_len) cuz we have multiple captions per image
-            B, nb_caps, cap_len = captions.shape
+            B, nb_captions, cap_len = captions.shape
             B, nb_masks, mask_len = masks.shape
-            captions = captions.view(B*nb_caps, cap_len) 
+            captions = captions.view(B*nb_captions, cap_len) 
             masks = masks.view(B*nb_masks, mask_len)
         else:
-            nb_caps = 1
+            nb_captions = 1
             
         img_descriptors, txt_descriptors = self(images, captions, masks)
         
-        if nb_caps > 1: # reshape back to (B, nb_caps, out_dim)
-            txt_descriptors = txt_descriptors.view(B, nb_caps, -1)
+        if nb_captions > 1: # reshape back to (B, nb_captions, out_dim)
+            txt_descriptors = txt_descriptors.view(B, nb_captions, -1)
         
         
         loss, batch_accuracy = self.loss_fn(img_descriptors, txt_descriptors)
@@ -140,31 +143,30 @@ class Framework(L.LightningModule):
         img_descriptors = np.concatenate(self.validation_descriptors["img"], axis=0) # (N, out_dim)
         txt_descriptors = np.concatenate(self.validation_descriptors["txt"], axis=0) # (N, nb_cap, out_dim)
         
-        # create toy labels
+        # create dummy labels
         B = img_descriptors.shape[0]    
-        labels = np.arange(B, device=img_descriptors.device)
+        labels = np.arange(B)
 
         # use faiss to calculate recall, images are gallery and texts are queries
-        recall_1, recall_5, recall_10 = self._calculate_recall(img_descriptors, labels, k_values=[1, 5, 10])
-        self.log("recall_1", recall_1, prog_bar=True, logger=True)
-        self.log("recall_5", recall_5, prog_bar=True, logger=True)
-        self.log("recall_10", recall_10, prog_bar=False, logger=True)
+        recall_1, recall_5, recall_10 = self._calculate_recall(img_descriptors, txt_descriptors, labels, k_values=[1, 5, 10])
+        self.log("recall@1", recall_1, prog_bar=True, logger=True)
+        self.log("recall@5", recall_5, prog_bar=True, logger=True)
+        self.log("recall@10", recall_10, prog_bar=False, logger=True)
 
         # clear the validation descriptors for the next epoch
         self.validation_descriptors.clear()
     
-    
-    def _calculate_recall(self, img_descriptors, labels, k_values=[1, 5, 10]):
+    @staticmethod
+    def _calculate_recall(img_descriptors, txt_descriptors, labels, k_values=[1, 5, 10]):
         """ 
-        Calculate the recall at k for the validation set.
+        Calculate the recall at k for the given img_descriptors as gallery
+        and txt_descriptors as queries.
         """
-        # calculate recall using faiss
-        # ...
         embed_size = img_descriptors.shape[1]
-        faiss_index = faiss.IndexFlatL2(embed_size)
+        faiss_index = faiss.IndexFlatL2(embed_size) 
         
-        faiss_index.add(img_descriptors)
-        _, predictions = faiss_index.search(labels, max(k_values))
+        faiss_index.add(img_descriptors) # add images to the index
+        _, predictions = faiss_index.search(txt_descriptors, max(k_values)) # search for the top k images for each text query
         
         correct_at_k = np.zeros(len(k_values))
         for q_idx, pred in enumerate(predictions):

@@ -1,3 +1,11 @@
+# ----------------------------------------------------------------------------
+# Copyright (c) 2024 Amar Ali-bey
+#
+# OpenVPRLab: https://github.com/amaralibey/nanoCLIP
+#
+# Licensed under the MIT License. See LICENSE file in the project root.
+# ----------------------------------------------------------------------------
+
 import argparse
 
 from lightning.pytorch import Trainer, seed_everything
@@ -5,23 +13,18 @@ from lightning.pytorch.callbacks import RichProgressBar, ModelCheckpoint
 from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTheme
 from lightning.pytorch.loggers import TensorBoardLogger
 
-import torch
 from torch.utils.data import DataLoader
 from torchvision import transforms
 from transformers import AutoTokenizer
 
-
-# from rich.traceback import install
-# install() # this is for better traceback formatting
-
-from src.framework import Framework
-from dataset import Flickr30k, CollateFlickr
+from src.nanoclip import NanoCLIP
+from src.dataset import Flickr30k, CollateFlickr
 
 
 seed = 42
 
 
-def train(batch_size, lr=1e-4, dev=False):
+def train(batch_size, lr, dev):
     
     seed_everything(seed, workers=True)
     
@@ -34,13 +37,12 @@ def train(batch_size, lr=1e-4, dev=False):
     # txt_model = "sentence-transformers/all-mpnet-base-v2"
     # txt_model = "microsoft/MiniLM-L12-H384-uncased"
     
-    tokenizer = AutoTokenizer.from_pretrained(txt_model)
     
     # let's define the model.
-    model = Framework(
+    model = NanoCLIP(
         txt_model=txt_model,
         img_model="dinov2_vits14", # 'dinov2_vitb14' (60M params) or 'dinov2_vits14' (20M params)
-        learning_rate=0.0001,
+        lr=lr,
         weight_decay=0.001,
         warmup_epochs=10,
         milestones=[15, 30, 40],
@@ -66,25 +68,26 @@ def train(batch_size, lr=1e-4, dev=False):
     ])
 
     
-    train_dataset = Flickr30k('./dataset', split='train', img_transform=train_transform)
-    val_dataset = Flickr30k('./dataset', split='val', img_transform=valid_transform)
+    train_dataset = Flickr30k('./datasets/flickr30k', split='train', img_transform=train_transform)
+    val_dataset = Flickr30k('./datasets/flickr30k', split='val', img_transform=valid_transform)
     
-
+    # use the same tokenizer as the one used in the text model.
+    tokenizer = AutoTokenizer.from_pretrained(txt_model)
 
     train_dataloader = DataLoader(
         train_dataset, 
         batch_size=batch_size, 
         shuffle=True, 
-        num_workers=12, 
+        num_workers=4, 
         pin_memory=True, 
-        collate_fn=CollateFlickr(tokenizer, max_length=64, captions_to_use='all') # captions_to_use='random' or 'first' or 'all'
+        collate_fn=CollateFlickr(tokenizer, max_length=80, captions_to_use='all') # captions_to_use='random' or 'first' or 'all'
     )
     
     val_dataloader = DataLoader(
         val_dataset, 
         batch_size=batch_size, 
         shuffle=False, 
-        num_workers=12, 
+        num_workers=4, 
         pin_memory=True,
         collate_fn=CollateFlickr(tokenizer, captions_to_use='first') # in eval we use the first caption only
     )
@@ -93,15 +96,15 @@ def train(batch_size, lr=1e-4, dev=False):
     
     tensorboard_logger = TensorBoardLogger(
         save_dir=f"./logs",
-        name=f"im_txt_matching",
+        name=f"nano_clip",
         default_hp_metric=False
     )
     
     checkpoint_cb = ModelCheckpoint(
-        monitor="recall",
-        filename="epoch({epoch:02d})_step({step:04d})_recall[{recall:.4f}]]",
+        monitor="recall@5",
+        filename="epoch:[{epoch:02d}]_recall@5:[{recall@5:.4f}]]",
         auto_insert_metric_name=False,
-        save_weights_only=False,
+        save_weights_only=True,
         save_top_k=1,
         mode="max",
     )
@@ -113,13 +116,7 @@ def train(batch_size, lr=1e-4, dev=False):
         precision="16-mixed",
         max_epochs=50,
         check_val_every_n_epoch=1,
-        callbacks=[
-            checkpoint_cb,
-            RichProgressBar(theme=RichProgressBarTheme()),
-        ],
-        reload_dataloaders_every_n_epochs=1,
-        # accumulate_grad_batches=1,
-        gradient_clip_val=1.0,
+        callbacks=[checkpoint_cb, RichProgressBar()],
         log_every_n_steps=10,
         fast_dev_run=dev,
         enable_model_summary=True,
@@ -127,15 +124,18 @@ def train(batch_size, lr=1e-4, dev=False):
     
     trainer.fit(model, train_dataloader, val_dataloader)
 
-# add argparse to pass the config file
+
+
+
+
 
 
 if __name__ == "__main__":
-    # add argparse to pass the dev
     parser = argparse.ArgumentParser(description="Train parameters")
     
     parser.add_argument("--dev", action="store_true", help="Enable fast dev run (one train and validation iteration).")
-    parser.add_argument("--bs", type=int, default=128, help="Batch size.")
+    parser.add_argument("--bs", type=int, default=64, help="Batch size.")
+    parser.add_argument("--lr", type=float, default=1e-4, help="Learning Rate.")
     args = parser.parse_args()
     
-    train(batch_size=args.bs, dev=args.dev)
+    train(batch_size=args.bs, lr=args.lr, dev=args.dev)

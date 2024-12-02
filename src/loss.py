@@ -7,6 +7,8 @@ import torch.nn.functional as F
     It aims to maximize the cosine similarity 
     between matched image-text pairs while 
     minimizing it for unmatched pairs within a batch
+    
+    This version supports multiple captions per image.
 """
 
 class ContrastiveLoss(nn.Module):
@@ -22,6 +24,7 @@ class ContrastiveLoss(nn.Module):
         
         # in case we have multiple captions per image
         if len(text_embedding.shape) == 3:
+            # TODO: vectorize this loop
             for i in range(text_embedding.shape[1]):
                 logits = torch.matmul(image_embedding, text_embedding[:, i].T) / self.temperature
                 loss_i2t = F.cross_entropy(logits, labels)
