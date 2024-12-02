@@ -55,7 +55,7 @@ class NanoCLIP(L.LightningModule):
         """
         optimizer_params = [
             {"params": self.img_encoder.parameters(), "lr": self.lr, "weight_decay": self.weight_decay},
-            {"params": self.txt_encoder.parameters(), "lr": self.lr, "weight_decay": self.weight_decay},
+            {"params": self.txt_encoder.parameters(), "lr": self.lr*0.1, "weight_decay": self.weight_decay},
         ]
         optimizer = torch.optim.AdamW(optimizer_params)
         scheduler = torch.optim.lr_scheduler.MultiStepLR(
@@ -71,7 +71,8 @@ class NanoCLIP(L.LightningModule):
             total_warmup_steps = self.warmup_epochs * self.trainer.num_training_batches
             lr_scale = min(1.0, (self.trainer.global_step + 1) / total_warmup_steps)
             for pg in optimizer.param_groups:
-                pg["lr"] = lr_scale * self.lr
+                initial_lr = pg.get("initial_lr", self.lr)
+                pg["lr"] = lr_scale * initial_lr
 
         optimizer.step(closure=optimizer_closure)
         self.log('_LR', optimizer.param_groups[-1]['lr'], prog_bar=False, logger=True)
