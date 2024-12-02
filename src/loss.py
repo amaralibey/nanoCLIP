@@ -2,16 +2,16 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
-""" 
+
+class ContrastiveLoss(nn.Module):
+    """ 
     symmetric cross-entropy contrastive loss. 
     It aims to maximize the cosine similarity 
     between matched image-text pairs while 
     minimizing it for unmatched pairs within a batch
     
     This version supports multiple captions per image.
-"""
-
-class ContrastiveLoss(nn.Module):
+    """
     def __init__(self, temperature=0.07):
         super().__init__()
         self.temperature = temperature

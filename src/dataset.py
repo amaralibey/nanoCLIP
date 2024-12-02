@@ -17,13 +17,13 @@ import random
 
 
 class Flickr30k(Dataset):
+    """ 
+    This class is specific to the Flickr30k dataset downloaded from: https://www.kaggle.com/datasets/eeshawn/flickr30k
+    The dataset is composed of images and captions.
+    The images are in the flickr30k_images folder.
+    The captions are in the captions.txt file.
+    """
     def __init__(self, base_path, split='train', img_transform=None, txt_transform=None):
-        """ 
-        This class is specific to the Flickr30k dataset downloaded from: https://www.kaggle.com/datasets/eeshawn/flickr30k
-        The dataset is composed of images and captions.
-        The images are in the flickr30k_images folder.
-        The captions are in the captions.txt file.
-        """
         # make sur flickr30k_images folder exists in the base_path
         base_path = pathlib.Path(base_path)
         img_dir = base_path / 'flickr30k_images'

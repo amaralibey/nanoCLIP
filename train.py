@@ -24,7 +24,7 @@ from src.dataset import Flickr30k, CollateFlickr
 seed = 42
 
 
-def train(batch_size, lr, dev):
+def train(batch_size, lr, dim, dev):
     
     seed_everything(seed, workers=True)
     
@@ -42,6 +42,7 @@ def train(batch_size, lr, dev):
     model = NanoCLIP(
         txt_model=txt_model,
         img_model="dinov2_vits14", # 'dinov2_vitb14' (60M params) or 'dinov2_vits14' (20M params)
+        embed_size=dim,
         lr=lr,
         weight_decay=0.001,
         warmup_epochs=10,
@@ -135,7 +136,8 @@ if __name__ == "__main__":
     
     parser.add_argument("--dev", action="store_true", help="Enable fast dev run (one train and validation iteration).")
     parser.add_argument("--bs", type=int, default=64, help="Batch size.")
+    parser.add_argument("--dim", type=int, default=64, help="Embedding dimensionality.")
     parser.add_argument("--lr", type=float, default=1e-4, help="Learning Rate.")
     args = parser.parse_args()
     
-    train(batch_size=args.bs, lr=args.lr, dev=args.dev)
+    train(batch_size=args.bs, lr=args.lr, dim=args.dim,  dev=args.dev)
