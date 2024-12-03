@@ -8,18 +8,18 @@
 
 import os
 import sys
+# Add parent directory to path
+parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.append(parent_dir)
+
 from pathlib import Path
 from typing import List, Tuple, Optional
 
 import torch
 import torch.nn.functional as F
-import gradio as gr
 import faiss
 from transformers import AutoTokenizer
-
-# Add parent directory to path
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-sys.path.append(parent_dir)
+import gradio as gr
 
 from src.models import TextEncoder
 from deployment.load_album import AlbumDataset
