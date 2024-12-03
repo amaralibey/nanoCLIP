@@ -21,12 +21,9 @@ from src.nanoclip import NanoCLIP
 from src.dataset import Flickr30k, CollateFlickr
 
 
-seed = 42
-
-
 def train(batch_size, lr, dim, dev):
     
-    seed_everything(seed, workers=True)
+    seed_everything(seed=20241203, workers=True)
     
     # txt_model = "albert-base-v2"
     # txt_model = "distilbert-base-uncased"
