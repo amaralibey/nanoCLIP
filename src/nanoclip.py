@@ -22,7 +22,7 @@ class NanoCLIP(L.LightningModule):
     """
     def __init__(
         self,
-        txt_model="microsoft/MiniLM-L12-H384-uncased",
+        txt_model="sentence-transformers/all-MiniLM-L6-v2",
         img_model='dinov2_vits14',
         embed_size=64, # output dimension of the encoder
         lr=0.0001,

@@ -13,10 +13,15 @@ datasets/*
 
 gallery/*
 !gallery/readme.txt
-# !data/train/.gitkeep
-# !data/val/.gitkeep
 
-# Logs
+# Ignore .pth files in deployment folder
+deployment/*.pth
+
+# Ignore faiss index files in gallery folder
+gallery/*.faiss
+
+
+# Ignore all logs
 logs/
 
 # VS Code

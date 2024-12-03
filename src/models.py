@@ -51,8 +51,9 @@ class ImageEncoder(nn.Module):
 
 
 class TextEncoder(nn.Module):
-    def __init__(self, output_dim=64, lang_model="microsoft/MiniLM-L12-H384-uncased"):
+    def __init__(self, output_dim=64, lang_model="sentence-transformers/all-MiniLM-L6-v2"):
         super().__init__()
+        self.lang_model = lang_model
         self.encoder = AutoModel.from_pretrained(lang_model)
         
         # freeze all parameters

@@ -14,7 +14,7 @@ from lightning.pytorch.callbacks.progress.rich_progress import RichProgressBarTh
 from lightning.pytorch.loggers import TensorBoardLogger
 
 from torch.utils.data import DataLoader
-from torchvision import transforms
+from torchvision import transforms as T
 from transformers import AutoTokenizer
 
 from src.nanoclip import NanoCLIP
@@ -31,7 +31,7 @@ def train(batch_size, lr, dim, dev):
     # txt_model = "albert-base-v2"
     # txt_model = "distilbert-base-uncased"
     # txt_model = "bert-base-uncased"
-    txt_model = "sentence-transformers/all-MiniLM-L6-v2" # (~20M params)
+    txt_model = "sentence-transformers/all-MiniLM-L6-v2" # (~22M params)
     # txt_model = "sentence-transformers/all-MiniLM-L12-v2"
     # txt_model = "huawei-noah/TinyBERT_General_4L_312D"
     # txt_model = "sentence-transformers/all-mpnet-base-v2"
@@ -50,22 +50,22 @@ def train(batch_size, lr, dim, dev):
         lr_mult=0.1,
     )
     
-    train_transform = transforms.Compose([
-        # transforms.Resize((224, 224)),
-        transforms.RandomPerspective(0.4, p=0.5),
-        transforms.RandomRotation(15),
-        transforms.RandomResizedCrop((224, 224), scale=(0.8, 1.0)),
-        transforms.RandomHorizontalFlip(0.5),
-        transforms.RandomVerticalFlip(0.1),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.), # no hue because it distorts the colors
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    train_transform = T.Compose([
+        # T.Resize((224, 224)),
+        T.RandomPerspective(0.4, p=0.5),
+        T.RandomRotation(15),
+        T.RandomResizedCrop((224, 224), scale=(0.8, 1.0)),
+        T.RandomHorizontalFlip(0.5),
+        T.RandomVerticalFlip(0.1),
+        T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.), # no hue because it distorts the colors
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     
-    valid_transform = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.ToTensor(),
-        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    valid_transform = T.Compose([
+        T.Resize((224, 224)),
+        T.ToTensor(),
+        T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
 
     
@@ -103,7 +103,7 @@ def train(batch_size, lr, dim, dev):
     
     checkpoint_cb = ModelCheckpoint(
         monitor="recall@5",
-        filename="epoch:[{epoch:02d}]_recall@5:[{recall@5:.4f}]]",
+        filename="epoch=[{epoch:02d}]_recall@5=[{recall@5:.4f}]]",
         auto_insert_metric_name=False,
         save_weights_only=True,
         save_top_k=1,
