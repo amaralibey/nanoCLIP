@@ -1,2 +1,4 @@
 This directory will contain your gallery of images. 
-When deploying the app, all images in the folder and subfolders will be used to build an index for search.
+When deploying the app, you can specify a folder (an album) 
+to be used for the search results.
+all images in the album (including subfolders) will be indexed.
