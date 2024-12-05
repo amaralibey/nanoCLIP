@@ -61,6 +61,12 @@ class ImageSearchEngine:
     def setup_gallery(self, gallery_folder: str) -> None:
         """Setup the image gallery and FAISS index."""
         gallery_path = Path(__file__).parent.parent.resolve() / f'gallery/{gallery_folder}'
+        # check if the gallery folder exists
+        if not gallery_path.exists():
+            raise FileNotFoundError(f"Album folder {gallery_path} not found")
+        # we use the AlbumDataset class to load the image paths (we won't load the images themselves)
+        # this is more efficient than loading the images directly, because Gradio will load them 
+        # given the paths returned by the search method.
         self.dataset = AlbumDataset(gallery_path, transform=None)
         
         # Load the FAISS index
@@ -127,7 +133,7 @@ class GalleryUI:
                 container=False
             )
             
-            with gr.Row(visible=False):
+            with gr.Row(visible=False): # this is hidden for now, but you can show it if you want
                 self.number_of_results = gr.Dropdown(
                     choices=[4,8,12,16,24,30],
                     value=30,
@@ -175,4 +181,7 @@ if __name__ == "__main__":
     )
     ui = GalleryUI(search_engine)
     demo = ui.create_interface()
-    demo.launch(server_name="0.0.0.0", server_port=7860)  # Launch the interface on port 7860
+    
+    # Launch the interface on port 7860
+    # 0.0.0.0 makes the interface available on all network interfaces (through wifi or LAN for example)
+    demo.launch(server_name="0.0.0.0", server_port=7860)

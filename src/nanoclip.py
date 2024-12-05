@@ -25,6 +25,7 @@ class NanoCLIP(L.LightningModule):
         txt_model="sentence-transformers/all-MiniLM-L6-v2",
         img_model='dinov2_vits14',
         embed_size=64, # output dimension of the encoder
+        unfreeze_n_blocks=4,
         lr=0.0001,
         warmup_epochs=0,
         weight_decay=0.0001,
@@ -36,17 +37,18 @@ class NanoCLIP(L.LightningModule):
         self.txt_model = txt_model
         self.img_model = img_model
         self.embed_size = embed_size
+        self.unfreeze_n_blocks = unfreeze_n_blocks
         self.lr = lr
         self.warmup_epochs = warmup_epochs
         self.weight_decay = weight_decay
         self.milestones = milestones
         self.lr_mult = lr_mult
-        # Let's save all hyperparameters to hparams file (for reproducibility)
-        self.save_hyperparameters()
         
-        self.img_encoder = ImageEncoder(self.embed_size, self.img_model)
-        self.txt_encoder = TextEncoder(self.embed_size, self.txt_model)
-        self.loss_fn = ContrastiveLoss()
+        self.save_hyperparameters() # save all hyperparameters to hparams file (for reproducibility) 
+        
+        self.img_encoder = ImageEncoder(self.embed_size, self.img_model, unfreeze_n_blocks)
+        self.txt_encoder = TextEncoder(self.embed_size, self.txt_model, unfreeze_n_blocks)
+        self.loss_fn = ContrastiveLoss(temperature=0.07)
 
     
     def configure_optimizers(self):
@@ -142,7 +144,7 @@ class NanoCLIP(L.LightningModule):
         Calculate the recall at 1, 5, and 10 for the validation set.
         """
         img_descriptors = np.concatenate(self.validation_descriptors["img"], axis=0) # (N, out_dim)
-        txt_descriptors = np.concatenate(self.validation_descriptors["txt"], axis=0) # (N, nb_cap, out_dim)
+        txt_descriptors = np.concatenate(self.validation_descriptors["txt"], axis=0) # (N, out_dim)
         
         # create dummy labels
         B = img_descriptors.shape[0]    

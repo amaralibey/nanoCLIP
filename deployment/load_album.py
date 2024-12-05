@@ -12,15 +12,8 @@ from torch.utils.data import Dataset
 from torchvision import transforms as T
 
 
-default_transform = T.Compose([
-    T.Resize((224, 224)),
-    T.ToTensor(),
-    T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-])
-
-
 class AlbumDataset(Dataset):
-    def __init__(self, root_dir='./gallery/photos', transform=default_transform):
+    def __init__(self, root_dir='./gallery/photos', transform=None):
         """
         This class is a simple dataset for loading ALL images from a directory and its subdirectories.
         Formats supported: .jpg, .jpeg, .png, .bmp, .tiff
