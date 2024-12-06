@@ -1,9 +1,9 @@
 # nanoCLIP
 
 NanoCLIP is a lightweight CLIP-like (Contrastive Language-Image ~~Pre-training~~ Fine-tuning) model for efficient text-to-image retrieval for personal photo galleries. Search your photo collection using natural language, powered by modern AI techniques.
-
-![1733527429592](image/README/1733527429592.gif)
-
+<p align=center>
+    <img src="image/README/1733527429592.gif"/>
+</p>
 This repository serves as a practical guide to learn:
 
 - **Text-to-Image Retrieval**: Implement and train an efficient CLIP-based model using the Flickr30k dataset
