@@ -1,6 +1,7 @@
 # nanoCLIP
 
-NanoCLIP is a lightweight CLIP-like (Contrastive Language-Image ~~Pre-training~~ Fine-tuning) model for efficient text-to-image retrieval for personal photo galleries. Search your photo collection using natural language, powered by modern AI techniques.
+NanoCLIP is a lightweight CLIP-like (Contrastive Language-Image ~~Pre-training~~ Fine-tuning) model for efficient text-to-image retrieval for personal photo galleries. Search your photo collection using natural language.
+
 <p align=center>
     <img src="image/README/1733527429592.gif"/>
 </p>
