@@ -2,6 +2,8 @@
 
 NanoCLIP is a lightweight CLIP-like (Contrastive Language-Image ~~Pre-training~~ Fine-tuning) model for efficient text-to-image retrieval for personal photo galleries. Search your photo collection using natural language, powered by modern AI techniques.
 
+![1733527429592](image/README/1733527429592.gif)
+
 This repository serves as a practical guide to learn:
 
 - **Text-to-Image Retrieval**: Implement and train an efficient CLIP-based model using the Flickr30k dataset
@@ -160,8 +162,6 @@ if __name__ == "__main__":
     demo.launch(server_name="0.0.0.0", server_port=7860)
 ```
 
-
-
  Now you can locally deploy the app by running the python script:
 
 ```
@@ -173,7 +173,5 @@ This will launch the app on `http://localhost:7860`
 You can access it in your browser. It should look like this:
 
    ![1733429947166](image/README/1733429947166.png)
-
-
 
 **Note:** you can also deploy your app for free on Hugging Face (*DO NOT DO THIS  IF PRIVACY OF YOUR ALBUMS IS  A CONCERN). You can follow the [Hugging Face Spaces documentation](https://huggingface.co/docs/hub/en/spaces-overview) to upload and run your app.
