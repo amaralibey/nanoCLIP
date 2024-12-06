@@ -48,7 +48,7 @@ class NanoCLIP(L.LightningModule):
         
         self.img_encoder = ImageEncoder(self.embed_size, self.img_model, unfreeze_n_blocks)
         self.txt_encoder = TextEncoder(self.embed_size, self.txt_model, unfreeze_n_blocks)
-        self.loss_fn = ContrastiveLoss(temperature=0.07)
+        self.loss_fn = ContrastiveLoss(temperature=0.05)
 
     
     def configure_optimizers(self):

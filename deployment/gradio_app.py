@@ -85,7 +85,7 @@ class ImageSearchEngine:
         embedding = F.normalize(embedding, p=2, dim=1)
         return embedding.cpu()
     
-    def search(self, query_text: str, k: int = 10) -> List[Tuple[str, Optional[str]]]:
+    def search(self, query_text: str, k: int = 20) -> List[Tuple[str, Optional[str]]]:
         """Search for images matching the query text."""
         if len(query_text) < 3: # avoid searching for very short queries
             return []
@@ -107,7 +107,20 @@ class GalleryUI:
             
     def create_interface(self) -> gr.Blocks:
         """Create the Gradio interface."""
-        with gr.Blocks(css=self.load_css(), theme=gr.themes.Soft(text_size='lg')) as demo:
+        custom_theme = gr.themes.Soft(
+            text_size='lg',
+            primary_hue="purple",
+            secondary_hue="gray",
+            font=[gr.themes.GoogleFont("Inter"), "system-ui", "sans-serif"],
+            font_mono=["IBM Plex Mono", "monospace"]
+        ).set(
+            button_primary_background_fill="*primary_300",
+            button_primary_background_fill_hover="*primary_200",
+            block_shadow="*shadow_drop_lg",
+            block_border_width="2px"
+        )
+        # with gr.Blocks(css=self.load_css(), theme=gr.themes.Soft(text_size='lg')) as demo:
+        with gr.Blocks(css=self.load_css(), theme=custom_theme) as demo:
             with gr.Column(elem_classes="container"):
                 self._create_header()
                 self._create_search_section()
@@ -121,29 +134,28 @@ class GalleryUI:
         with gr.Column(elem_classes="header"):
             gr.Markdown("# Gallery Search")
             gr.Markdown("Search through your collection of photos with AI")
+            gr.Markdown("`in this demo, you are searching COCO dataset images`")
     
     def _create_search_section(self) -> None:
         """Create the search interface section."""
         with gr.Column():
             self.query_text = gr.Textbox(
-                placeholder="Example: Riding my horse",
+                placeholder="Example: Riding my horse [Enter]",
                 label="Search Query",
                 elem_classes="search-input",
                 autofocus=True,
-                container=False
+                container=False,
+                interactive=True
             )
             
-            with gr.Row(visible=False): # this is hidden for now, but you can show it if you want
-                self.number_of_results = gr.Dropdown(
-                    choices=[4,8,12,16,24,30],
-                    value=30,
-                    label="Results per page",
-                    elem_classes="dropdown"
-                )
-                
+        with gr.Column(elem_classes="gallery"):
+        
             self.gallery = gr.Gallery(
                 label="Search Results",
-                columns=3,
+                columns=6,
+                # min_height=800,
+                # rows=3,
+                # height=800,
                 object_fit="cover",
                 elem_classes="gallery",
                 container=False,
@@ -159,29 +171,32 @@ class GalleryUI:
     
     def _setup_callbacks(self, demo: gr.Blocks) -> None:
         """Setup the interface callbacks."""
-        self.query_text.change(
+        self.query_text.submit(
             self.search_engine.search,
-            inputs=[self.query_text, self.number_of_results],
+            inputs=[self.query_text],#, self.number_of_results],
             outputs=self.gallery,
             show_progress='hidden',
+            show_share_button=False,
         )
         
-        self.number_of_results.change(
-            self.search_engine.search,
-            inputs=[self.query_text, self.number_of_results],
-            outputs=self.gallery
-        )
+        # self.number_of_results.change(
+        #     self.search_engine.search,
+        #     inputs=[self.query_text, self.number_of_results],
+        #     outputs=self.gallery
+        # )
 
+
+
+search_engine = ImageSearchEngine(
+    model_name = "sentence-transformers/all-MiniLM-L6-v2",
+    output_dim = 64,
+    gallery_folder = "photos",
+)
+ui = GalleryUI(search_engine)
+demo = ui.create_interface()
 
 if __name__ == "__main__":
-    search_engine = ImageSearchEngine(
-        model_name = "sentence-transformers/all-MiniLM-L6-v2",
-        output_dim = 64,
-        gallery_folder = "photos",
-    )
-    ui = GalleryUI(search_engine)
-    demo = ui.create_interface()
-    
+        
     # Launch the interface on port 7860
     # 0.0.0.0 makes the interface available on all network interfaces (through wifi or LAN for example)
     demo.launch(server_name="0.0.0.0", server_port=7860)

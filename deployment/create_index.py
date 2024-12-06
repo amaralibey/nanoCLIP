@@ -112,7 +112,7 @@ class NanoCLIPDeployer:
 
 def main():
     deployer = NanoCLIPDeployer(
-        model_checkpoint='logs/nano_clip/version_33/checkpoints/epoch=[16]_recall@5=[0.6476]].ckpt',
+        model_checkpoint='logs/nano_clip/version_12/checkpoints/epoch:[17]_recall@5:[0.6517]].ckpt',
         txt_model = "sentence-transformers/all-MiniLM-L6-v2",
         img_model = 'dinov2_vits14',
         embed_size = 64,

@@ -9,8 +9,6 @@
 from pathlib import Path
 from PIL import Image
 from torch.utils.data import Dataset
-from torchvision import transforms as T
-
 
 class AlbumDataset(Dataset):
     def __init__(self, root_dir='./gallery/photos', transform=None):
@@ -27,6 +25,10 @@ class AlbumDataset(Dataset):
         
         # Gather all image paths
         self.imgs = [p for p in self.root_dir.rglob('*') if p.suffix.lower() in ['.jpg', '.jpeg', '.png', '.bmp', '.tiff']]
+        
+        # sort the images by name
+        self.imgs = sorted(self.imgs)
+        
         if not self.imgs:
             raise ValueError(f"No images found under {root_dir}.")
         

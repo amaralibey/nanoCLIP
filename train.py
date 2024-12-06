@@ -41,30 +41,24 @@ def train(batch_size, lr, dim, dev):
         unfreeze_n_blocks=4,        # unfreeze the last n blocks of both text and image encoders (for fine-tuning)
         embed_size=dim,             # output dimension of the encoders
         lr=lr,
-        weight_decay=1e-3,
-        warmup_epochs=10,
-        milestones=[15, 30, 40],
+        weight_decay=4e-4,
+        warmup_epochs=5,
+        milestones=[10, 20, 30],
         lr_mult=0.1,
     )
     
+    # data augmentation during training
     train_transform = T.Compose([
-        # T.Resize((224, 224)),
-        T.RandomPerspective(0.4, p=0.5),
-        # T.RandomAffine(
-        #         degrees=(-15, 15),
-        #         translate=(0.1, 0.1),
-        #         scale=(0.9, 1.1),
-        #         shear=(-10, 10)
-        #     ),
-        T.RandomResizedCrop((224, 224), scale=(0.8, 1.0), interpolation=3),
         T.RandomRotation(15),
+        T.RandomResizedCrop((224, 224), scale=(0.8, 1.0), interpolation=3),
         T.RandomHorizontalFlip(0.5),
-        # T.RandomVerticalFlip(0.1),
-        # T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.), # no hue because it distorts the colors
+        T.RandomVerticalFlip(0.1),
+        T.ColorJitter(brightness=0.2, contrast=0.2, saturation=0.2, hue=0.), # no hue because it distorts the colors
         T.ToTensor(),
         T.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
     ])
     
+    # no data augmentation during validation
     valid_transform = T.Compose([
         T.Resize((224, 224)),
         T.ToTensor(),
@@ -118,7 +112,7 @@ def train(batch_size, lr, dim, dev):
         devices=[0],
         logger=tensorboard_logger,      # comment this line if you don't want to use tensorboard logger
         precision="16-mixed",
-        max_epochs=50,
+        max_epochs=40,
         check_val_every_n_epoch=1,
         callbacks=[
             checkpoint_cb,              # this callback saves the best model based on the metric we monitor (recall@5)
